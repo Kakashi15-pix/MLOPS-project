@@ -1,0 +1,15 @@
+.venv/
+__pycache__/
+*.py[cod]
+
+.model_cache/
+# Local training data and environment settings
+
+.env
+.env.*
+
+# Generated logs and local tooling files
+*.log
+.pytest_cache/
+.mypy_cache/
+.coverage

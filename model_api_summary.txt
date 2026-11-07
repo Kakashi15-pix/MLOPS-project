@@ -1,0 +1,95 @@
+MODEL API SUMMARY
+=================
+
+Yelp review sentiment API
+
+Purpose
+-------
+This service exposes the trained sentiment model through JSON endpoints.
+It intentionally has no HTML page or browser user interface.
+
+Model pipeline
+--------------
+1. Review text is normalized by collapsing whitespace.
+2. Logistic regression predicts from word and character TF-IDF features.
+3. The label with the highest probability is returned.
+
+Exported model artifacts
+------------------------
+The loader first checks for an artifacts/ directory. If it is unavailable,
+it searches for outputs.zip, weight.zip, or an outputs*.zip archive in the
+project root.
+
+The archive contains:
+- artifacts/model.json: labels, training metadata, and vectorizer settings
+- artifacts/logreg.joblib: TF-IDF vectorizer and logistic regression model
+- results/: exported evaluation reports and confusion matrices
+
+HTTP endpoints
+--------------
+GET /
+    Returns service information and the endpoint list.
+
+GET /health
+    Returns readiness status and the loaded artifact directory.
+
+GET /model
+    Returns labels and training metadata.
+
+GET /weights
+    Backward-compatible alias for GET /model.
+
+POST /predict
+    Predicts one review.
+
+    Request:
+        {"text": "The food was excellent"}
+
+    Response fields:
+        label          Predicted label.
+        probabilities  Logistic regression probability for each label.
+        weights        Model weights, with logistic regression set to 1.0.
+
+POST /predict/batch
+    Predicts up to 100 reviews in one request.
+
+    Request:
+        {"texts": ["Great service", "The food was disappointing"]}
+
+    Response:
+        {"predictions": [...]} 
+
+Validation behavior
+-------------------
+- Invalid or empty text returns HTTP 400 with a JSON error.
+- Batch requests reject non-arrays, empty arrays, invalid items, and more
+  than 100 items.
+- ZIP extraction rejects archive paths that could escape the extraction
+  directory.
+
+Run the API
+-----------
+Install dependencies:
+
+    pip install -r requirements.txt
+
+Start the service:
+
+    python app.py
+
+The default address is:
+
+    http://127.0.0.1:5000
+
+Example requests
+----------------
+
+    curl http://127.0.0.1:5000/health
+
+    curl -X POST http://127.0.0.1:5000/predict ^
+      -H "Content-Type: application/json" ^
+      -d "{\"text\":\"Excellent service\"}"
+
+    curl -X POST http://127.0.0.1:5000/predict/batch ^
+      -H "Content-Type: application/json" ^
+      -d "{\"texts\":[\"Great\", \"Not good\"]}"
